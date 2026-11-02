@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>福鼎城镇演化 · 文字沙盘</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="seal">福鼎</span>
+    <div>
+      <h1>福鼎城镇演化</h1>
+      <span class="sub">山海之间 · 七百年文字沙盘</span>
+    </div>
+  </div>
+  <div id="timeline" class="timeline"></div>
+  <div class="top-actions">
+    <button id="btnStep" class="btn primary">推进一轮 ▶</button>
+    <button id="btnAuto" class="btn">自动推演 ⏩</button>
+    <button id="btnPlay" class="btn">逐年回放 ▷</button>
+    <button id="btnReset" class="btn">重置</button>
+    <button id="btnCompare" class="btn ghost">三情景对比</button>
+    <button id="btnTitles" class="btn ghost">称号图鉴</button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- 左：情景与政策 -->
+  <aside class="col ctrl">
+    <div class="panel">
+      <div class="panel-title">发展情景</div>
+      <div id="scenBox" class="scen-box"></div>
+      <div id="scenHint" class="hint"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">本轮政策</div>
+      <div id="policyBox" class="policy-box"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">局势</div>
+      <div class="stats">
+        <div class="stat"><em id="stEra">—</em><span id="stYear">—</span></div>
+        <div class="grid2">
+          <div class="stat"><span>人口</span><em id="stPop">—</em></div>
+          <div class="stat"><span>城区</span><em id="stUrban">—</em></div>
+          <div class="stat"><span>茶园</span><em id="stTea">—</em></div>
+          <div class="stat"><span>滩涂</span><em id="stMud">—</em></div>
+          <div class="stat"><span>道路</span><em id="stRoad">—</em></div>
+        </div>
+        <div class="cap-wrap"><div id="capBar" class="cap-bar"></div></div>
+        <div class="cap-txt" id="capTxt">承载力 —</div>
+      </div>
+      <div id="finalStrip" class="final-strip" style="display:none"></div>
+    </div>
+  </aside>
+
+  <!-- 中：叙事 / 校验 / 表格 -->
+  <section class="col main">
+    <div id="narrative" class="panel narrative"></div>
+    <div id="validation" class="panel validation"></div>
+    <div id="tableBox" class="panel tablebox"></div>
+  </section>
+
+  <!-- 右：三维 DEM -->
+  <section class="col view">
+    <div class="panel view-panel">
+      <div class="panel-title">三维 DEM 沙盘预览 <small>拖动旋转 · 滚轮缩放 · 双击自动旋转</small>
+        <button id="btnResetView" class="btn tiny">复位视角</button></div>
+      <div id="view3d" class="view3d"></div>
+      <div id="legend" class="legend"></div>
+    </div>
+  </section>
+</main>
+
+<!-- 三情景对比弹窗 -->
+<div id="cmpModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head"><b>三种发展情景 · 终局对比</b><button id="cmpClose" class="btn tiny">关闭 ✕</button></div>
+    <div id="cmpBody" class="modal-body"></div>
+  </div>
+</div>
+
+<!-- 称号图鉴弹窗 -->
+<div id="titleModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head"><b id="titleHead">称号图鉴</b><button id="titleClose" class="btn tiny">关闭 ✕</button></div>
+    <div id="titleBody" class="modal-body"><div id="titleGrid" class="title-grid"></div></div>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/boundary.js"></script>
+<script src="js/realdem.js"></script>
+<script src="js/terrain.js"></script>
+<script src="js/data.js"></script>
+<script src="js/validate.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/titles.js"></script>
+<script src="js/three-view.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
