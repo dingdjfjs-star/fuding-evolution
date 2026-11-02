@@ -142,7 +142,7 @@
         '<span>经济 ' + sc.econ + '</span><span>生态 ' + sc.eco + '</span><span>民生 ' + sc.living + '</span>' +
         '<span class="fin-total">综合 ' + sc.total + '</span>' +
         '<span class="fin-title"><i class="tseal">' + got[0].seal + '</i> ' + got[0].name + '</span>' +
-        '<button id="btnArena" class="btn tiny">记入竞演</button>';
+        '<button id="btnArena" class="btn tiny primary">记入竞演（' + sideName() + '）</button>';
       var ba = $('btnArena');
       if (ba) ba.onclick = markArena;
     } else fin.style.display = 'none';
@@ -240,12 +240,35 @@
   }
 
   // ---------- 双人竞演：各自完整推演后「记入竞演」，两位即结算 ----------
+  function sideName() { return arena.length === 0 ? '红方' : '蓝方'; }
+  function renderArenaBar() {
+    var el = $('arenaBar');
+    if (!el) return;
+    if (arena.length === 0) {
+      el.innerHTML = '<p>两局定胜负：</p><p><b>① 红方</b>推完 6 轮 → 点终评条上的「记入竞演」。</p>' +
+        '<p><b>② 蓝方</b>点「重置」换一种玩法，推完 6 轮再记入。</p>' +
+        '<p><b>③</b> 点「竞演结算」逐维度定胜负。</p>';
+      $('btnDuel').classList.remove('ready');
+    } else if (arena.length === 1) {
+      var a = arena[0];
+      el.innerHTML = '<p><span class="side-r">■ 红方已入座</span>：' + a.name + '，综合 <b>' + a.scores.total + '</b>。</p>' +
+        '<p>接下来：<b>点「重置」</b>，换一种玩法（换情景或改政策）推完 6 轮，再点「记入竞演（蓝方）」。</p>';
+      $('btnDuel').classList.remove('ready');
+    } else {
+      var a2 = arena[0], b = arena[1];
+      el.innerHTML = '<p><span class="side-r">■ 红方</span> ' + a2.name + '：<b>' + a2.scores.total + '</b> 分</p>' +
+        '<p><span class="side-b">■ 蓝方</span> ' + b.name + '：<b>' + b.scores.total + '</b> 分</p>' +
+        '<p class="ready-txt">双方就绪——点顶栏「竞演结算」定胜负！</p>';
+      $('btnDuel').classList.add('ready');
+    }
+  }
   function markArena() {
     if (game.round < 6) return;
     var sc = E.finalScores(game);
     var got = collectTitles(game, sc, scenario ? scenario.id : 'free');
+    var side = sideName();
     arena.push({
-      name: (scenario ? scenario.name : '自由推演'),
+      name: (scenario ? scenario.name : '自由推演'), side: side,
       scores: sc, pop: game.pop,
       urban: (game.records[6].stats[8] * T.AREA).toFixed(1),
       tea: (game.records[6].stats[5] * T.AREA).toFixed(1),
@@ -253,16 +276,28 @@
       title: got[0]
     });
     if (arena.length > 2) arena = arena.slice(-2);
+    renderStats();
+    renderArenaBar();
   }
   function openDuel() {
-    if (arena.length < 2) return;
-    var A = arena[arena.length - 2], B = arena[arena.length - 1];
+    var A = arena.length > 1 ? arena[0] : null, B = arena.length > 1 ? arena[1] : null;
+    if (!A) {
+      // 教学模式：还没记满两方时，弹窗教用法
+      $('duelBody').innerHTML = '<div class="duel-how">' +
+        '<p><b>双人竞演是这么玩的：</b></p>' +
+        '<p><b>① 红方</b>：选一种玩法（情景或自由改政策），推完 6 轮——终评条上点「记入竞演（红方）」。</p>' +
+        '<p><b>② 蓝方</b>：点「重置」，换一种玩法再推完 6 轮，点「记入竞演（蓝方）」。</p>' +
+        '<p><b>③</b> 左栏「竞演台」显示双方就绪后，点「竞演结算」——经济/生态/民生/滩涂逐维度定胜负。</p>' +
+        '<p class="hint">竞演台在左栏底部，随时可见进度。现在还没记满两位，先去推演吧。</p></div>';
+      $('duelModal').classList.add('show');
+      return;
+    }
     function win(va, vb, higher) {
       var a = +va, b = +vb;
       if (a === b) return '';
       return (higher ? a > b : a < b) ? ' style="color:var(--cinnabar);font-weight:bold"' : '';
     }
-    var rows = '<tr><th>维度</th><th>' + A.name + '</th><th>' + B.name + '</th></tr>';
+    var rows = '<tr><th>维度</th><th class="side-r">' + A.side + ' · ' + A.name + '</th><th class="side-b">' + B.side + ' · ' + B.name + '</th></tr>';
     rows += '<tr><td>综合分</td><td' + win(A.scores.total, B.scores.total, true) + '>' + A.scores.total + '</td><td' + win(B.scores.total, A.scores.total, true) + '>' + B.scores.total + '</td></tr>';
     rows += '<tr><td>经济</td><td' + win(A.scores.econ, B.scores.econ, true) + '>' + A.scores.econ + '</td><td' + win(B.scores.econ, A.scores.econ, true) + '>' + B.scores.econ + '</td></tr>';
     rows += '<tr><td>生态</td><td' + win(A.scores.eco, B.scores.eco, true) + '>' + A.scores.eco + '</td><td' + win(B.scores.eco, A.scores.eco, true) + '>' + B.scores.eco + '</td></tr>';
@@ -272,8 +307,9 @@
     rows += '<tr><td>茶园 km²</td><td>' + A.tea + '</td><td>' + B.tea + '</td></tr>';
     rows += '<tr><td>滩涂 km²</td><td>' + A.mud + '</td><td>' + B.mud + '</td></tr>';
     rows += '<tr><td>称号</td><td><span class="fin-title"><i class="tseal">' + A.title.seal + '</i>' + A.title.name + '</span></td><td><span class="fin-title"><i class="tseal">' + B.title.seal + '</i>' + B.title.name + '</span></td></tr>';
+    var winner = A.scores.total === B.scores.total ? '平局——山海各有各的答案。' : (A.scores.total > B.scores.total ? A.side + '（' + A.name + '）胜出！' : B.side + '（' + B.name + '）胜出！');
     $('duelBody').innerHTML = '<div class="tbl-scroll"><table>' + rows + '</table></div>' +
-      '<p>综合分高者胜——也可以约定：谁的生态分先掉到 50 以下谁输。</p>';
+      '<p class="duel-verdict"><b>' + winner + '</b> 也可以约定：谁的生态分先掉到 50 以下谁输。</p>';
     $('duelModal').classList.add('show');
   }
 
@@ -393,6 +429,7 @@
     renderTable();
     renderStats();
     renderControls();
+    renderArenaBar();
     if (view3d) view3d.update(game.records[viewIdx]);
   }
 
