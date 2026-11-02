@@ -17,7 +17,8 @@
     { id: 8, name: '城镇', color: 0x96503c, css: '#96503c', cat: 'built' },
     { id: 9, name: '港口', color: 0x53667d, css: '#53667d', cat: 'built' },
     { id: 10, name: '交通', color: 0x6b6157, css: '#6b6157', cat: 'built' },
-    { id: 11, name: '养殖塘', color: 0x7ba3a8, css: '#7ba3a8', cat: 'eco' }
+    { id: 11, name: '养殖塘', color: 0x7ba3a8, css: '#7ba3a8', cat: 'eco' },
+    { id: 12, name: '光伏风电', color: 0xa9c0cc, css: '#a9c0cc', cat: 'built' }
   ];
   var CATS = { water: '水域', eco: '海岸生态', farm: '农林生产', built: '建设用地' };
 
@@ -29,63 +30,70 @@
       intro: '南宋咸淳年间，闽东北一隅。沙埕湾像一条伸进山地的手臂，湾顶桐山溪水缓缓入海。' +
         '零星渔村挂在湾口与海滨：沙埕的渔汛、秦屿的滩涂、嵛山的草场天湖。桐山渡是闽浙古道过湾的咽喉，' +
         '一叶渡船，挑夫与茶担在渡口石阶上歇脚。群山阻隔，官道陡峻，山海之间靠潮水与脚力。',
+      art: '<svg viewBox="0 0 120 56"><path d="M0 44 Q20 40 40 44 T80 44 T120 44" fill="none" stroke="#4b81a3" stroke-width="2"/><path d="M0 50 Q20 47 40 50 T80 50 T120 50" fill="none" stroke="#4b81a3" stroke-width="1.4" opacity=".55"/><path d="M30 35 L72 35 L62 44 L40 44 Z" fill="#2c332b"/><path d="M50 8 L50 33" stroke="#2c332b" stroke-width="2"/><path d="M51 10 L70 30 L53 31 Z" fill="#a63d2f"/><path d="M86 20 Q94 12 102 20 Q110 12 118 20" fill="none" stroke="#2c332b" stroke-width="1.4" opacity=".45"/></svg>',
       outro: '山海相隔的格局，将决定此后七百年每一次选择的代价。'
     },
     {
       key: 'ming', year: 1520, label: '明 · 卫所与渔汛', round: 1,
       pop: 18000, popMul: 1.9,
-      urbanBudget: 3, farmBudget: 9, teaBudget: 4,
+      urbanBudget: 3, farmBudget: 9, teaBudget: 6,
       tech: { teaTrade: true },
       intro: '明中叶，沙埕设巡检司备倭，烟墩与石寨立在湾口山头。渔汛带来了季节性的人流，' +
         '港湾里冬晒鳗鲞、夏收牡蛎。山民引茶籽入坡地，太姥山僧院的老茶树枝繁叶茂——绿雪芽的名字开始被山外的人提起。',
+      art: '<svg viewBox="0 0 120 56"><rect x="16" y="20" width="13" height="16" fill="none" stroke="#2c332b" stroke-width="2"/><path d="M22 12 L22 20 M22 12 L34 16 L22 19" fill="none" stroke="#a63d2f" stroke-width="2"/><path d="M52 38 L88 38 L78 46 L62 46 Z" fill="#2c332b"/><path d="M60 20 L60 36 M60 22 L74 34 L62 35" fill="none" stroke="#2c332b" stroke-width="1.6"/><path d="M0 48 Q20 44 40 48 T80 48 T120 48" fill="none" stroke="#4b81a3" stroke-width="1.8"/></svg>',
       outro: '渔盐之利与一芽新绿，是这座湾城最早的家底。'
     },
     {
       key: 'qing', year: 1795, label: '清中叶 · 白琳茶起', round: 2,
       pop: 90000, popMul: 4.7,
-      urbanBudget: 6, farmBudget: 15, teaBudget: 16,
+      urbanBudget: 6, farmBudget: 15, teaBudget: 24,
       tech: { teaTrade: true, teaExport: true, reclamation: false },
       intro: '清中叶，白琳茶馆林立，"白琳工夫"的名称随茶商的货单走南闯北。点头埠头茶箱堆积如山，' +
         '独轮车吱呀碾过石板路。桐山渡扩为街市，前岐的晒鲞场、店下的盐田各有营生。海禁松弛后，闽南人北迁垦殖，湾内人烟渐密。',
+      art: '<svg viewBox="0 0 120 56"><path d="M0 26 Q30 18 60 26 T120 26" fill="none" stroke="#8ba05f" stroke-width="3"/><path d="M0 36 Q30 28 60 36 T120 36" fill="none" stroke="#8ba05f" stroke-width="3"/><path d="M0 46 Q30 38 60 46 T120 46" fill="none" stroke="#556b47" stroke-width="3"/><circle cx="40" cy="22" r="2" fill="#a63d2f"/><circle cx="72" cy="30" r="2" fill="#a63d2f"/><circle cx="100" cy="24" r="2" fill="#a63d2f"/></svg>',
       outro: '茶，第一次成了这片土地与外部世界讨价还价的筹码。'
     },
     {
       key: 'min', year: 1930, label: '近代 · 开埠通商', round: 3,
       pop: 200000, popMul: 2.1,
-      urbanBudget: 9, farmBudget: 12, teaBudget: 14,
+      urbanBudget: 9, farmBudget: 12, teaBudget: 21,
       tech: { teaTrade: true, teaExport: true, reclamation: false, steamship: true },
       intro: '民国年间，轮船的汽笛代替了橹声。沙埕港开埠，茶、纸、明矾、鱼货在此过驳，' +
         '上海与福州的商行在埠头设栈。白琳工夫红茶远销欧洲，桐山街上新式学堂与电报局并排而立。' +
         '但山路依旧难行——茶箱出山，仍要肩挑马驮到埠头。',
+      art: '<svg viewBox="0 0 120 56"><path d="M24 34 L86 34 L78 46 L34 46 Z" fill="#2c332b"/><rect x="52" y="22" width="16" height="12" fill="none" stroke="#2c332b" stroke-width="2"/><rect x="58" y="12" width="7" height="10" fill="#a63d2f"/><path d="M61 8 Q66 4 61 0" fill="none" stroke="#8a7f66" stroke-width="2" opacity=".6"/><path d="M0 50 Q20 46 40 50 T80 50 T120 50" fill="none" stroke="#4b81a3" stroke-width="1.8"/></svg>',
       outro: '港口敞开了门，道路却还是一根卡在喉咙里的细竹管。'
     },
     {
       key: 'collective', year: 1978, label: '集体 · 围垦茶场', round: 4,
-      pop: 380000, popMul: 1.8,
-      urbanBudget: 8, farmBudget: 27, teaBudget: 26,
+      pop: 450000, popMul: 2.15,
+      urbanBudget: 8, farmBudget: 27, teaBudget: 39,
       tech: { teaTrade: true, teaExport: false, reclamation: true, steamship: true, machinery: true },
       intro: '集体化年代，国营茶场在丘陵上铺开，万人上山大种茶。海堤一道道合龙，' +
         '店下、秦屿的滩涂被围成农场与盐场。化肥与机耕路改变着平原的面貌，桐山镇第一次有了像样的街道。',
+      art: '<svg viewBox="0 0 120 56"><path d="M4 40 L116 40" stroke="#2c332b" stroke-width="3"/><path d="M0 48 Q20 45 40 48 T80 48 T120 48" fill="none" stroke="#4b81a3" stroke-width="1.8"/><path d="M12 32 Q30 26 48 32 M60 32 Q78 26 96 32" fill="none" stroke="#8ba05f" stroke-width="2.6"/><path d="M20 24 Q36 19 52 24 M68 24 Q84 19 100 24" fill="none" stroke="#8ba05f" stroke-width="2.6"/></svg>',
       outro: '向海要田、向山要茶——人定胜天的年代，欠下的账要留给后人算。'
     },
     {
       key: 'reform', year: 2005, label: '改革 · 公路时代', round: 5,
-      pop: 500000, popMul: 1.26,
-      urbanBudget: 26, farmBudget: 9, teaBudget: 30,
+      pop: 550000, popMul: 1.17,
+      urbanBudget: 26, farmBudget: 9, teaBudget: 45,
       tech: { teaTrade: true, teaExport: true, reclamation: true, steamship: true, machinery: true, highway: true },
       intro: '改革开放后，104国道拓宽，县乡公路成网，茶叶不再等船，而是等货车。' +
         '乡镇企业兴起，桐山城区沿溪铺开，沙埕港重开货运。打工的行囊与回乡的汇款单向对流，' +
         '城关的房价第一次成了茶余饭后的话题。',
+      art: '<svg viewBox="0 0 120 56"><path d="M0 48 Q40 44 58 28 T120 18" fill="none" stroke="#6b6157" stroke-width="4"/><path d="M4 47 Q40 43 56 28" fill="none" stroke="#ece3cf" stroke-width="1.4" stroke-dasharray="4 4"/><rect x="66" y="14" width="18" height="10" fill="none" stroke="#2c332b" stroke-width="2"/><rect x="84" y="17" width="9" height="7" fill="#a63d2f"/><circle cx="71" cy="26" r="2.6" fill="#2c332b"/><circle cx="87" cy="26" r="2.6" fill="#2c332b"/></svg>',
       outro: '路通了，城大了，海边的滩涂开始了一场旷日持久的拉锯。'
     },
     {
       key: 'now', year: 2025, label: '当代 · 湾区与白茶热', round: 6,
-      pop: 560000, popMul: 1.07,
-      urbanBudget: 34, farmBudget: 6, teaBudget: 38,
+      pop: 555000, popMul: 1.0,
+      urbanBudget: 34, farmBudget: 6, teaBudget: 57,
       tech: { teaTrade: true, teaExport: true, reclamation: true, steamship: true, machinery: true, highway: true, rail: true, ecoRedline: true },
       intro: '沈海高速与温福铁路穿境而过，福鼎成了闽浙边界的节点城市。白茶热让荒山茶园身价倍增，' +
         '"世界白茶在中国，中国白茶在福鼎"。而生态红线与海湾治理也提上台面：退养还滩、红树林种植、' +
         '沙埕湾的蓝眼泪与候鸟成了新的名片。城市的边界，第一次需要跟自然商量着画。',
+      art: '<svg viewBox="0 0 120 56"><rect x="8" y="26" width="9" height="18" fill="#96503c"/><rect x="20" y="20" width="9" height="24" fill="#96503c"/><rect x="32" y="30" width="8" height="14" fill="#96503c"/><path d="M46 44 L86 44 L96 38 L58 38 Z" fill="#2c332b"/><path d="M52 34 L76 34" stroke="#a63d2f" stroke-width="2"/><path d="M100 34 L116 34 L116 46 L100 46 Z" fill="none" stroke="#a9c0cc" stroke-width="2"/><path d="M100 40 L116 40 M108 34 L108 46" stroke="#a9c0cc" stroke-width="1.4"/></svg>',
       outro: '七百年山海之争，如今到了必须给出答案的时候。'
     }
   ];
@@ -106,6 +114,11 @@
       id: 'eco', name: '海岸生态保护', icon: '海',
       desc: '守护滩涂与红树林：禁止围垦造塘，推动退养还滩、种植红树林。生态分上升，但建设用地向海扩张受限。',
       short: '滩涂是候鸟的食堂，也是纳潮的肺'
+    },
+    {
+      id: 'solar', name: '滩涂光伏', icon: '能',
+      desc: '向海要能：在养殖塘与滨海低地上架设光伏矩阵与风机（改革开放后可行）。电送温州市场，经济大涨；生态保护期禁建。',
+      short: '阳光与海风，也是产业'
     }
   ];
 
@@ -114,14 +127,14 @@
   var SCENARIOS = [
     {
       id: 'A', name: '情景一 · 商贸强港', tag: '以港兴城，以路通商',
-      desc: '修路全期推进，前期茶贸跟进，不设生态约束——滩涂让位于码头与塘埭，城市沿湾疯长。',
+      desc: '修路全期推进，前期茶贸跟进，不设生态约束——滩涂让位于码头与塘埭，城市沿湾疯长，滩涂上架起光伏。',
       policy: [
         { road: 1, tea: 1, eco: 0 },
         { road: 1, tea: 1, eco: 0 },
         { road: 1, tea: 1, eco: 0 },
         { road: 1, tea: 1, eco: 0 },
-        { road: 1, tea: 0, eco: 0 },
-        { road: 1, tea: 0, eco: 0 }
+        { road: 1, tea: 0, eco: 0, solar: 1 },
+        { road: 1, tea: 0, eco: 0, solar: 1 }
       ]
     },
     {
@@ -180,12 +193,14 @@
       { id: 'highway', name: '国道拓宽通车', weight: 3, mod: { roadAdd: 4, popMul: 1.04 }, note: '104国道改线拓宽，货车当天就能把茶青送出福鼎。' },
       { id: 'factories', name: '乡镇企业兴起', weight: 3, mod: { urbanAdd: 3, popMul: 1.03 }, note: '石板材厂、化油器厂在城郊落地，机器声盖过鸡鸣。' },
       { id: 'pond_boom', name: '虾塘遍地', weight: 2, mod: { reclaimAdd: 6 }, note: '滩涂被切割成一方方虾塘，电灯拉到了海边。' },
-      { id: 'white_tea', name: '白茶悄然走红', weight: 2, mod: { teaAdd: 4 }, note: '南方茶市上白毫银针悄然涨价，老茶农直觉明年该多种。' }
+      { id: 'white_tea', name: '白茶悄然走红', weight: 2, mod: { teaAdd: 4 }, note: '南方茶市上白毫银针悄然涨价，老茶农直觉明年该多种。' },
+      { id: 'taimushan_5a', name: '太姥山旅游线', weight: 2, mod: { popMul: 1.02, urbanAdd: 1, ecoRestore: 1 }, note: '太姥山挂上 5A 招牌，秦屿的民宿与茶庄一年多过一年。' }
     ],
     6: [
       { id: 'rail', name: '高铁设站', weight: 3, mod: { roadAdd: 3, popMul: 1.05, urbanAdd: 2 }, note: '温福铁路在桐山设站，距温州一小时，距上海半天。' },
       { id: 'tea_hot', name: '白茶热价涨', weight: 3, mod: { teaAdd: 5, popMul: 1.03 }, note: '白茶火遍全国，清明前的点头茶市一叶难求。' },
       { id: 'redline', name: '生态红线划定', weight: 3, mod: { ecoRestore: 4 }, note: '沙埕湾划入海湾生态治理，退养还滩，红树林成片补种。' },
+      { id: 'blue_bay', name: '蓝色海湾整治', weight: 2, mod: { ecoRestore: 3 }, note: '蓝色海湾整治收官，退养还滩的红树林连成了线。' },
       { id: 'typhoon_dujuan', name: '超强台风过境', weight: 2, mod: { popMul: 0.99, urbanAdd: -1, ecoRestore: 1 }, note: '台风过境，滨海大道积水倒灌，也冲垮了部分老化虾塘。' }
     ]
   };
@@ -202,7 +217,7 @@
   // 用地类型下标：1 滩涂 3 红树林湿地 5 茶园 6 农田 8 城镇 9 港口 10 交通
   function capacityOf(stats) {
     return Math.round(stats[6] * 1300 + stats[5] * 600 + stats[1] * 200 +
-      stats[8] * 6200 + stats[9] * 6000 + stats[10] * 36 + stats[3] * 200);
+      stats[8] * 6200 + stats[9] * 6000 + stats[10] * 36 + stats[3] * 200 + stats[12] * 300);
   }
 
   var api = {

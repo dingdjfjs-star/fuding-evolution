@@ -3,7 +3,7 @@
  */
 'use strict';
 (function () {
-  var D = window.FDData, E = window.FDEngine, V = window.FDValidate, T = window.FDTerrain, TL = window.FDTitles;
+  var D = window.FDData, E = window.FDEngine, V = window.FDValidate, T = window.FDTerrain, TL = window.FDTitles, SFX = window.FDSfx;
   var $ = function (id) { return document.getElementById(id); };
 
   var game = E.initGame();
@@ -12,6 +12,7 @@
   var autoTimer = null;
   var view3d = null;
   var playing = false, playCancel = false;
+  var arena = [];           // 竞演选手（最多记最近两位）
 
   // ---------- 称号收集（localStorage 跨推演图鉴） ----------
   function loadCollection() {
@@ -49,7 +50,7 @@
       dot.className = 'era-dot' + (i <= viewIdx ? ' past' : '') + (i === viewIdx ? ' now' : '');
       dot.innerHTML = '<span class="era-year">' + era.year + '</span><span class="era-name">' + era.label.split(' · ')[1] + '</span>';
       dot.title = era.label;
-      if (i <= game.round) dot.onclick = function () { if (playing) return; viewIdx = i; renderAll(); };
+      if (i <= game.round) dot.onclick = function () { if (playing) return; viewIdx = i; renderAll(); if (SFX) SFX.playEra(i); };
       else dot.classList.add('lock');
       el.appendChild(dot);
     });
@@ -59,7 +60,9 @@
   function renderNarrative() {
     var rec = game.records[viewIdx];
     var el = $('narrative');
+    var era = D.eraByRound(rec.round);
     var head = '<div class="narr-head"><span class="narr-era">' + rec.eraLabel + '</span>' +
+      (era.art ? '<span class="narr-art">' + era.art + '</span>' : '') +
       '<span class="narr-year">公元 ' + rec.year + ' 年</span></div>';
     el.innerHTML = head + rec.narrative.map(function (p) { return '<p>' + p + '</p>'; }).join('');
   }
@@ -129,7 +132,7 @@
     bar.style.width = Math.min(100, ratio * 100) + '%';
     bar.style.background = ratio > 1 ? '#d9534f' : (ratio > 0.9 ? '#e0a54a' : '#5aa469');
     $('capTxt').textContent = '承载力 ' + Math.round(cap / 10000 * 10) / 10 + ' 万 · ' + Math.round(ratio * 100) + '%';
-    // 终评 + 称号
+    // 终评 + 称号 + 竞演记入
     var fin = $('finalStrip');
     if (rec.round === 6) {
       var sc = E.finalScores(game);
@@ -138,7 +141,10 @@
       fin.innerHTML = '<b>推演终评（' + (scenario ? scenario.name : '自由推演') + '）</b>' +
         '<span>经济 ' + sc.econ + '</span><span>生态 ' + sc.eco + '</span><span>民生 ' + sc.living + '</span>' +
         '<span class="fin-total">综合 ' + sc.total + '</span>' +
-        '<span class="fin-title"><i class="tseal">' + got[0].seal + '</i> ' + got[0].name + '</span>';
+        '<span class="fin-title"><i class="tseal">' + got[0].seal + '</i> ' + got[0].name + '</span>' +
+        '<button id="btnArena" class="btn tiny">记入竞演</button>';
+      var ba = $('btnArena');
+      if (ba) ba.onclick = markArena;
     } else fin.style.display = 'none';
   }
 
@@ -211,6 +217,7 @@
     E.stepRound(game, policy);
     viewIdx = game.records.length - 1;
     renderAll();
+    if (SFX) SFX.playEra(game.round);
   }
   function toggleAuto() {
     if (autoTimer) {
@@ -230,6 +237,72 @@
     game = E.initGame();
     viewIdx = 0;
     renderAll();
+  }
+
+  // ---------- 双人竞演：各自完整推演后「记入竞演」，两位即结算 ----------
+  function markArena() {
+    if (game.round < 6) return;
+    var sc = E.finalScores(game);
+    var got = collectTitles(game, sc, scenario ? scenario.id : 'free');
+    arena.push({
+      name: (scenario ? scenario.name : '自由推演'),
+      scores: sc, pop: game.pop,
+      urban: (game.records[6].stats[8] * T.AREA).toFixed(1),
+      tea: (game.records[6].stats[5] * T.AREA).toFixed(1),
+      mud: (game.records[6].stats[1] * T.AREA).toFixed(1),
+      title: got[0]
+    });
+    if (arena.length > 2) arena = arena.slice(-2);
+  }
+  function openDuel() {
+    if (arena.length < 2) return;
+    var A = arena[arena.length - 2], B = arena[arena.length - 1];
+    function win(va, vb, higher) {
+      var a = +va, b = +vb;
+      if (a === b) return '';
+      return (higher ? a > b : a < b) ? ' style="color:var(--cinnabar);font-weight:bold"' : '';
+    }
+    var rows = '<tr><th>维度</th><th>' + A.name + '</th><th>' + B.name + '</th></tr>';
+    rows += '<tr><td>综合分</td><td' + win(A.scores.total, B.scores.total, true) + '>' + A.scores.total + '</td><td' + win(B.scores.total, A.scores.total, true) + '>' + B.scores.total + '</td></tr>';
+    rows += '<tr><td>经济</td><td' + win(A.scores.econ, B.scores.econ, true) + '>' + A.scores.econ + '</td><td' + win(B.scores.econ, A.scores.econ, true) + '>' + B.scores.econ + '</td></tr>';
+    rows += '<tr><td>生态</td><td' + win(A.scores.eco, B.scores.eco, true) + '>' + A.scores.eco + '</td><td' + win(B.scores.eco, A.scores.eco, true) + '>' + B.scores.eco + '</td></tr>';
+    rows += '<tr><td>民生</td><td' + win(A.scores.living, B.scores.living, true) + '>' + A.scores.living + '</td><td' + win(B.scores.living, A.scores.living, true) + '>' + B.scores.living + '</td></tr>';
+    rows += '<tr><td>2025 人口</td><td>' + D.fmtWan(A.pop) + '</td><td>' + D.fmtWan(B.pop) + '</td></tr>';
+    rows += '<tr><td>城区 km²</td><td>' + A.urban + '</td><td>' + B.urban + '</td></tr>';
+    rows += '<tr><td>茶园 km²</td><td>' + A.tea + '</td><td>' + B.tea + '</td></tr>';
+    rows += '<tr><td>滩涂 km²</td><td>' + A.mud + '</td><td>' + B.mud + '</td></tr>';
+    rows += '<tr><td>称号</td><td><span class="fin-title"><i class="tseal">' + A.title.seal + '</i>' + A.title.name + '</span></td><td><span class="fin-title"><i class="tseal">' + B.title.seal + '</i>' + B.title.name + '</span></td></tr>';
+    $('duelBody').innerHTML = '<div class="tbl-scroll"><table>' + rows + '</table></div>' +
+      '<p>综合分高者胜——也可以约定：谁的生态分先掉到 50 以下谁输。</p>';
+    $('duelModal').classList.add('show');
+  }
+
+  // ---------- 事件编辑器（会话级自定义事件池） ----------
+  var MOD_KEYS = ['popMul', 'urbanAdd', 'teaAdd', 'farmAdd', 'roadAdd', 'portAdd', 'reclaimAdd', 'ecoRestore'];
+  function openEvents() {
+    if (!$('evText').value) $('evText').value = JSON.stringify(D.EVENTS, null, 1);
+    $('evStatus').textContent = '编辑后点「应用」即时生效（会话级，刷新还原）。台风类事件 id 含 taifeng/storm/typhoon 才会播放气旋动画。';
+    $('evModal').classList.add('show');
+  }
+  function applyEvents() {
+    try {
+      var parsed = JSON.parse($('evText').value);
+      for (var k = 1; k <= 6; k++) {
+        var arr = parsed[k];
+        if (!Array.isArray(arr)) throw '第 ' + k + ' 轮事件池缺失或不是数组';
+        arr.forEach(function (ev, i) {
+          if (!ev.id || !ev.name || typeof ev.weight !== 'number' || typeof ev.note !== 'string') throw '第' + k + '轮事件 #' + i + ' 缺 id/name/weight/note';
+          for (var mk in (ev.mod || {})) if (MOD_KEYS.indexOf(mk) < 0) throw '事件 ' + ev.id + ' 的 mod 键不在白名单：' + mk;
+        });
+      }
+      D.EVENTS = parsed;
+      $('evStatus').textContent = '✓ 已应用：自定义事件池即时生效（后续轮次按新池抽取）。';
+    } catch (e) { $('evStatus').textContent = '✕ ' + e; }
+  }
+  function downloadEvents() {
+    var blob = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(D.EVENTS, null, 1));
+    var a = document.createElement('a');
+    a.href = blob; a.download = 'fuding-events.json'; a.click();
   }
 
   // ---------- 逐年回放动画 ----------
@@ -265,7 +338,7 @@
         view3d.playStep(a, b, t);
         $('stYear').textContent = Math.round(a.year + (b.year - a.year) * t) + ' 年';
         $('stEra').textContent = t < 0.5 ? a.eraLabel : b.eraLabel;
-        if (t >= 1) { i++; viewIdx = i; renderTimeline(); setTimeout(next, 260); return; }
+        if (t >= 1) { i++; viewIdx = i; renderTimeline(); if (SFX) SFX.playEra(i); setTimeout(next, 260); return; }
         requestAnimationFrame(frame);
       })(performance.now());
     }
@@ -332,9 +405,21 @@
     $('btnReset').onclick = resetGame;
     $('btnCompare').onclick = runCompare;
     $('btnTitles').onclick = openTitleModal;
+    $('btnChart').onclick = function () {
+      var m = view3d.getMode() === 'chart' ? 'landuse' : 'chart';
+      view3d.setMode(m);
+      $('btnChart').textContent = m === 'chart' ? '用地模式' : '海图模式';
+    };
+    $('btnDuel').onclick = openDuel;
+    $('btnEvents').onclick = openEvents;
+    $('btnSfx').onclick = function () { if (SFX) $('btnSfx').textContent = SFX.toggle() ? '音效:静' : '音效:开'; };
     $('btnResetView').onclick = function () { view3d.resetView(); };
     $('cmpClose').onclick = function () { $('cmpModal').classList.remove('show'); };
     $('titleClose').onclick = function () { $('titleModal').classList.remove('show'); };
+    $('duelClose').onclick = function () { $('duelModal').classList.remove('show'); };
+    $('evClose').onclick = function () { $('evModal').classList.remove('show'); };
+    $('evApply').onclick = applyEvents;
+    $('evDownload').onclick = downloadEvents;
     // 图例
     $('legend').innerHTML = D.LAND.map(function (L) {
       return '<span><i style="background:' + L.css + '"></i>' + L.name + '</span>';

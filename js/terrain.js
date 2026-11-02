@@ -10,7 +10,7 @@
   var B = (typeof module !== 'undefined' && module.exports)
     ? require('./boundary.js')
     : root.FDBoundary;
-  // 真实高程（Copernicus DEM，由 tools/fetch-dem.js 抓取；缺失时退回程序化地形）
+  // 真实高程（SRTM，由 tools/fetch-dem.js 抓取；缺失时退回程序化地形）
   var R = null;
   if (typeof module !== 'undefined' && module.exports) {
     try { R = require('./realdem.js'); } catch (e) { R = null; }
@@ -18,6 +18,14 @@
     R = root.FDRealDEM || null;
   }
   if (R && (R.W !== 72 || R.H !== 72)) R = null;
+  // 真实河网（OSM，由 tools/fetch-rivers.js 抓取；缺失时退回手绘水系）
+  var RR = null;
+  if (typeof module !== 'undefined' && module.exports) {
+    try { RR = require('./realrivers.js'); } catch (e) { RR = null; }
+  } else {
+    RR = root.FDRealRivers || null;
+  }
+  if (!RR || !RR.rivers || RR.rivers.length < 4) RR = null;
   var W = 72, H = 72, CELL = 0.8;          // 格网 72×72，格距 0.8km
   var N = W * H;
   var AREA = CELL * CELL;                  // 0.64 km²/格
@@ -101,18 +109,18 @@
     { name: '店下溪', pts: [[46, 30], [50, 32], [54, 32], [58, 32], [61, 32], [63, 33]] } // 入东海（绕开店下镇址）
   ];
   var TOWNS = [
-    { id: 'tongshan', name: '桐山渡', x: 37, y: 20, kind: '渡口', note: '沙埕港顶、桐山溪汇口，闽浙古道咽喉' },
-    { id: 'shacheng', name: '沙埕', x: 62, y: 17, kind: '渔港', note: '湾口北岸深水良港，渔汛商船辐辏' },
-    { id: 'qianqi', name: '前岐', x: 50, y: 16, kind: '山乡', note: '湾北岸，照澜溪畔门户' },
-    { id: 'diantou', name: '点头', x: 44, y: 23, kind: '山乡渡口', note: '湾南岸，茶叶集散埠' },
-    { id: 'bailin', name: '白琳', x: 36, y: 27, kind: '山乡', note: '白琳工夫茶原乡' },
-    { id: 'panxi', name: '磻溪', x: 24, y: 26, kind: '山乡', note: '西部高山茶区' },
-    { id: 'guanyang', name: '管阳', x: 10, y: 25, kind: '山乡', note: '界岭山区，云雾茶园' },
-    { id: 'dianxia', name: '店下', x: 52, y: 30, kind: '农乡', note: '东南滨海平原谷仓' },
-    { id: 'qinyu', name: '秦屿', x: 42, y: 50, kind: '渔村', note: '太姥山东南海滨，渔汛良港' },
-    { id: 'yushan', name: '嵛山', x: 60, y: 68, kind: '海岛渔村', note: '大嵛山岛，天湖草场' },
+    { id: 'tongshan', name: '桐山渡', x: 37, y: 20, kind: '渡口', lon: 120.214, lat: 27.327, note: '沙埕港顶、桐山溪汇口，闽浙古道咽喉' },
+    { id: 'shacheng', name: '沙埕', x: 62, y: 17, kind: '渔港', lon: 120.442, lat: 27.163, note: '湾口北岸深水良港，渔汛商船辐辏' },
+    { id: 'qianqi', name: '前岐', x: 50, y: 16, kind: '山乡', lon: 120.322, lat: 27.303, note: '湾北岸，照澜溪畔门户' },
+    { id: 'diantou', name: '点头', x: 44, y: 23, kind: '山乡渡口', lon: 120.234, lat: 27.274, note: '湾南岸，茶叶集散埠' },
+    { id: 'bailin', name: '白琳', x: 36, y: 27, kind: '山乡', lon: 120.185, lat: 27.236, note: '白琳工夫茶原乡' },
+    { id: 'panxi', name: '磻溪', x: 24, y: 26, kind: '山乡', lon: 120.093, lat: 27.212, note: '西部高山茶区' },
+    { id: 'guanyang', name: '管阳', x: 10, y: 25, kind: '山乡', lon: 120.014, lat: 27.279, note: '界岭山区，云雾茶园' },
+    { id: 'dianxia', name: '店下', x: 52, y: 30, kind: '农乡', lon: 120.352, lat: 27.120, note: '东南滨海平原谷仓' },
+    { id: 'qinyu', name: '秦屿', x: 42, y: 50, kind: '渔村', lon: 120.205, lat: 27.060, note: '太姥山东南海滨，渔汛良港' },
+    { id: 'yushan', name: '嵛山', x: 60, y: 68, kind: '海岛渔村', lon: 120.348, lat: 26.947, note: '大嵛山岛，天湖草场' },
     // 龙安开发区：1990s 围垦造区，只在改革开放后且未开生态保护时出现
-    { id: 'longan', name: '龙安', x: 58, y: 26, kind: '开发区', fromRound: 5, note: '湾口南岸填海而生的省级开发区，厂房替代滩涂' }
+    { id: 'longan', name: '龙安', x: 58, y: 26, kind: '开发区', fromRound: 5, lon: 120.388, lat: 27.117, note: '前身为店下杨岐垦区（1991 年海堤堵口），1998 年设区；合成革与化工集聚' }
   ];
 
   // ---------- BFS 距离场 ----------
@@ -234,13 +242,82 @@
       if (cnt) dem2[i6] = mix(dem[i6], sum / cnt, 0.5);
     }
     dem = dem2;
-    // 7) 河道下切：单调下降
+    // 7) 河道下切：单调下降（真实河网优先，河口自动延伸至手绘水面）
     var river = new Uint8Array(N);
-    for (var rv = 0; rv < RIVERS.length; rv++) {
-      var pts = RIVERS[rv].pts;
+    var riverList;
+    if (RR) {
+      var HAND_NAMES = ['照澜溪', '水北溪', '点头溪', '秦屿溪', '店下溪', '管阳溪'];
+      var handPt = {};
+      RIVERS.forEach(function (r) { handPt[r.name] = r.pts[r.pts.length - 1]; });
+      function nearWaterCell(cx, cy, r2) {
+        for (var dy = -r2; dy <= r2; dy++) for (var dx = -r2; dx <= r2; dx++) {
+          var nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          if (!territory[ny * W + nx]) return true;
+        }
+        return false;
+      }
+      riverList = RR.rivers.map(function (r) {
+        var pts = r.pts.map(function (p) { return [p[0], p[1]]; });
+        // 定向：河口 = 离手绘水面更近的一端（OSM way 方向不定）
+        function dWater(x0, y0) {
+          var bd = 99;
+          for (var dy = -15; dy <= 15; dy++) for (var dx = -15; dx <= 15; dx++) {
+            var nx = Math.round(x0) + dx, ny = Math.round(y0) + dy;
+            if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+            if (!territory[ny * W + nx]) return Math.abs(dx) + Math.abs(dy);
+            bd = Math.min(bd, Math.abs(dx) + Math.abs(dy));
+          }
+          return bd;
+        }
+        if (dWater(pts[0][0], pts[0][1]) < dWater(pts[pts.length - 1][0], pts[pts.length - 1][1])) pts.reverse();
+        var mx = Math.max(0, Math.min(W - 1, Math.round(pts[pts.length - 1][0])));
+        var my = Math.max(0, Math.min(H - 1, Math.round(pts[pts.length - 1][1])));
+        if (!nearWaterCell(mx, my, 2)) {
+          // 河口延伸：BFS 陆地找最近手绘水面（≤10 步）
+          var src = my * W + mx;
+          var prev = {}; var q = [src]; var qk = {}; qk[src] = 1;
+          var found = -1;
+          for (var qi = 0; qi < q.length && found < 0; qi++) {
+            var cur = q[qi], cx = cur % W, cy = (cur / W) | 0;
+            var nb = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+            for (var d3 = 0; d3 < 4; d3++) {
+              var nx = cx + nb[d3][0], ny = cy + nb[d3][1];
+              if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+              var j3 = ny * W + nx;
+              if (qk[j3]) continue;
+              qk[j3] = 1; prev[j3] = cur;
+              if (!territory[j3]) { found = j3; break; }
+              q.push(j3);
+            }
+          }
+          if (found >= 0) {
+            var path = [], walk = found;
+            while (walk !== src && prev[walk] !== undefined) { path.push(walk); walk = prev[walk]; }
+            path.reverse();
+            for (var pi3 = 0; pi3 < path.length; pi3++) pts.push([(path[pi3] % W) + 0.5, ((path[pi3] / W) | 0) + 0.5]);
+          }
+        }
+        var name = r.name;
+        if (name === '未名溪') {
+          var bd = 1e9, bn = '溪';
+          for (var hn = 0; hn < HAND_NAMES.length; hn++) {
+            var hp = handPt[HAND_NAMES[hn]];
+            var dd2 = Math.hypot(mx - hp[0], my - hp[1]);
+            if (dd2 < bd) { bd = dd2; bn = HAND_NAMES[hn]; }
+          }
+          if (bd <= 9) name = bn;
+        }
+        return { name: name, pts: pts };
+      });
+    } else {
+      riverList = RIVERS;
+    }
+    for (var rv = 0; rv < riverList.length; rv++) {
+      var pts = riverList[rv].pts;
       var prevBed = 1e9;
       for (i = 0; i < pts.length; i++) {
-        var xi = Math.round(pts[i][0]), yi = Math.round(pts[i][1]);
+        var xi = Math.max(0, Math.min(W - 1, Math.round(pts[i][0]))), yi = Math.max(0, Math.min(H - 1, Math.round(pts[i][1])));
         var gi = yi * W + xi;
         var sample = dem[gi] > 0 ? dem[gi] : 30;
         var bed = Math.min(sample - 2.5, prevBed - 0.6);
@@ -256,16 +333,63 @@
           }
         }
       }
+    }
+    // 标记 + 河口连通补全
+    var riverIdx = new Int16Array(N).fill(-1);
+    for (rv = 0; rv < riverList.length; rv++) {
+      pts = riverList[rv].pts;
       for (i = 0; i < pts.length - 1; i++) {
         var ax = pts[i][0], ay = pts[i][1], bx = pts[i + 1][0], by = pts[i + 1][1];
         var steps = Math.ceil(Math.hypot(bx - ax, by - ay) * 2);
         for (var st = 0; st <= steps; st++) {
-          var qx = Math.round(ax + (bx - ax) * st / steps), qy = Math.round(ay + (by - ay) * st / steps);
-          river[qy * W + qx] = 1;
+          var qx2 = Math.round(ax + (bx - ax) * st / steps), qy2 = Math.round(ay + (by - ay) * st / steps);
+          if (qx2 >= 0 && qy2 >= 0 && qx2 < W && qy2 < H) river[qy2 * W + qx2] = 1, riverIdx[qy2 * W + qx2] = rv;
         }
       }
     }
-    // 8) 不变量兜底：陆域 ≥1.2m，水域 ≤-1.2m；城镇锚点平台
+    function mouthConnected(mx, my, self) {
+      for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++) {
+        var nx = mx + dx, ny = my + dy;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        var j4 = ny * W + nx;
+        if (!territory[j4]) return true;
+        if (river[j4] && riverIdx[j4] !== self) return true;
+      }
+      return false;
+    }
+    for (rv = 0; rv < riverList.length; rv++) {
+      var tail = riverList[rv].pts[riverList[rv].pts.length - 1];
+      var mx2 = Math.max(0, Math.min(W - 1, Math.round(tail[0]))), my2 = Math.max(0, Math.min(H - 1, Math.round(tail[1])));
+      if (mouthConnected(mx2, my2, rv)) continue;
+      var src2 = my2 * W + mx2;
+      var prev2 = {}, q2 = [src2], qk2 = {}; qk2[src2] = 1;
+      var found2 = -1;
+      for (var qi2 = 0; qi2 < q2.length && found2 < 0; qi2++) {
+        var cur2 = q2[qi2], cx2 = cur2 % W, cy2 = (cur2 / W) | 0;
+        var nb2 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        for (var d4 = 0; d4 < 4; d4++) {
+          var nx2 = cx2 + nb2[d4][0], ny2 = cy2 + nb2[d4][1];
+          if (nx2 < 0 || ny2 < 0 || nx2 >= W || ny2 >= H) continue;
+          var j5 = ny2 * W + nx2;
+          if (qk2[j5]) continue;
+          qk2[j5] = 1; prev2[j5] = cur2;
+          if (!territory[j5] || (river[j5] && riverIdx[j5] !== rv)) { found2 = j5; break; }
+          q2.push(j5);
+        }
+      }
+      if (found2 >= 0) {
+        var path2 = [], walk2 = found2;
+        while (walk2 !== src2 && prev2[walk2] !== undefined) { path2.push(walk2); walk2 = prev2[walk2]; }
+        path2.reverse();
+        for (var pi4 = 0; pi4 < path2.length; pi4++) {
+          var cell4 = path2[pi4];
+          river[cell4] = 1; riverIdx[cell4] = rv;
+          if (territory[cell4]) dem[cell4] = Math.min(dem[cell4], 2.5);
+          riverList[rv].pts.push([(cell4 % W) + 0.5, ((cell4 / W) | 0) + 0.5]);
+        }
+      }
+    }
+    // 8) 不变量兜底：陆域 ≥1.2m，水域 ≤-1.2m；城镇锚点平台（穿镇河道暗渠化）
     for (i = 0; i < N; i++) {
       if (territory[i]) dem[i] = Math.max(dem[i], 1.2);
       else dem[i] = Math.min(dem[i], -1.2);
@@ -275,7 +399,9 @@
       for (var ty = Math.max(0, tw.y - 1); ty <= Math.min(H - 1, tw.y + 1); ty++) {
         for (var tx = Math.max(0, tw.x - 1); tx <= Math.min(W - 1, tw.x + 1); tx++) {
           var gi0 = ty * W + tx;
-          if (territory[gi0]) dem[gi0] = Math.max(dem[gi0], 2.5);
+          if (!territory[gi0]) continue;
+          dem[gi0] = Math.max(dem[gi0], 2.5);
+          river[gi0] = 0; // 穿镇河段按暗渠处理，避免镇心落在河格上
         }
       }
     }
@@ -335,7 +461,7 @@
       W: W, H: H, N: N, CELL: CELL, AREA: AREA, SEED: SEED,
       dem: dem, territory: territory, sea: sea, bay: bay, river: river,
       coast: coast, isle: isle, slope: slope,
-      bayPts: BAY_PTS, rivers: RIVERS, bumps: BUMPS, islands: ISLANDS, towns: TOWNS,
+      bayPts: BAY_PTS, rivers: riverList, bumps: BUMPS, islands: ISLANDS, towns: TOWNS,
       mulberry32: mulberry32,
       idx: function (x, y) { return y * W + x; },
       elevAt: function (x, y) { return dem[y * W + x]; },

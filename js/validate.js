@@ -12,7 +12,7 @@
     T = root.FDTerrain; D = root.FDData;
   }
   var W = T.W, H = T.H, N = T.N, AREA = T.AREA;
-  var SEA = 0, MUD = 1, WATER = 2, MANGROVE = 3, FOREST = 4, TEA = 5, FARM = 6, VILLAGE = 7, URBAN = 8, PORT = 9, ROAD = 10, POND = 11;
+  var SEA = 0, MUD = 1, WATER = 2, MANGROVE = 3, FOREST = 4, TEA = 5, FARM = 6, VILLAGE = 7, URBAN = 8, PORT = 9, ROAD = 10, POND = 11, SOLAR = 12;
 
   function add(issues, round, level, rule, msg) {
     issues.push({ round: round, level: level, rule: rule, msg: msg });
@@ -93,6 +93,7 @@
       if (rec.policy && rec.policy.eco) {
         if (ecoNow < ecoPrev) add(issues, rec.round, 'error', '生态保护冲突', '生态保护期滩涂湿地净减少 ' + (ecoPrev - ecoNow) + ' 格');
         if (stats[POND] > prevStats[POND]) add(issues, rec.round, 'error', '生态保护冲突', '生态保护期新增养殖塘 ' + (stats[POND] - prevStats[POND]) + ' 格');
+        if (stats[SOLAR] > prevStats[SOLAR]) add(issues, rec.round, 'error', '生态保护冲突', '生态保护期新增光伏 ' + (stats[SOLAR] - prevStats[SOLAR]) + ' 格');
       }
       if (stats[MUD] < stateInitMud(records) * 0.85) {
         add(issues, rec.round, 'warn', '滩涂生态红线', '滩涂仅存初值 ' + Math.round(stats[MUD] / stateInitMud(records) * 100) + '%，纳潮与候鸟栖息地告急');
@@ -163,6 +164,22 @@
       if (!touch) orphan++;
     }
     if (orphan) add(issues, rec.round, 'error', '道路合理', orphan + ' 段路网未连接任何聚落/港口');
+
+    // R8b 光伏选址：须在滨海低地（高程 ≤20m 且临水 ≤3 格），且不得压湿地
+    var solarBad = 0;
+    for (c = 0; c < N; c++) {
+      if (land[c] !== SOLAR) continue;
+      var xs = c % W, ys = (c / W) | 0;
+      if (T.elevAt(xs, ys) > 20) { solarBad++; continue; }
+      var nearW = false;
+      for (var dys = -3; dys <= 3 && !nearW; dys++) for (var dxs = -3; dxs <= 3; dxs++) {
+        var nxs = xs + dxs, nys = ys + dys;
+        if (nxs < 0 || nys < 0 || nxs >= W || nys >= H) continue;
+        if (!T.territory[nys * W + nxs]) { nearW = true; break; }
+      }
+      if (!nearW) solarBad++;
+    }
+    if (solarBad) add(issues, rec.round, 'error', '光伏选址', solarBad + ' 格光伏不在滨海低地（高程≤20m 且临水≤3 格）');
 
     // R9 港口选址
     var portBad = 0;

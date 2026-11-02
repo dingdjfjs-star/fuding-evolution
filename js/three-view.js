@@ -106,19 +106,30 @@
     }
     rebuildLabels(0, false);
 
-    // ---------- 用地配色 ----------
+    // ---------- 用地配色（landuse）与分层设色（chart 海图模式） ----------
     var cTmp = new THREE.Color();
+    var mode = 'landuse';
+    var lastLand = null;
     function shade(base, elev) { // 高程明暗：山头略亮、谷底略暗
       var k = 0.82 + Math.min(0.35, Math.max(0, elev) / 1000 * 0.35);
       return cTmp.setHex(base).multiplyScalar(k);
     }
+    function chartColor(i) { // 分层设色：海按水深、陆按高程分带
+      var e = T.dem[i];
+      var bands;
+      if (e <= 0) bands = [[-40, 0x27506f], [-12, 0x2c5f7f], [-4, 0x457c9c], [-99, 0x6399b4]];
+      else bands = [[6, 0xc9b46e], [20, 0xd8c98e], [60, 0xa8b585], [150, 0x7d9a5f], [350, 0x5d7a4e], [650, 0x4a6344], [9999, 0x8a8a78]];
+      for (var b = 0; b < bands.length; b++) if (e <= bands[b][0]) return cTmp.setHex(bands[b][1]);
+      return cTmp.setHex(0x8a8a78);
+    }
+    function paintCell(i, t) {
+      var col = mode === 'chart' ? chartColor(i) : shade(D.LAND[t].color, T.dem[i]);
+      var o = i * 3;
+      colors[o] = col.r; colors[o + 1] = col.g; colors[o + 2] = col.b;
+    }
     function updateLand(land) {
-      for (var i = 0; i < N; i++) {
-        var t = land[i];
-        var col = shade(D.LAND[t].color, T.dem[i]);
-        var o = i * 3;
-        colors[o] = col.r; colors[o + 1] = col.g; colors[o + 2] = col.b;
-      }
+      lastLand = land;
+      for (var i = 0; i < N; i++) paintCell(i, land[i]);
       geo.attributes.color.needsUpdate = true;
     }
     // 逐年过渡：t∈[0,1]，每格按确定性哈希错峰翻色——形成自发的“蔓延”节奏
@@ -127,13 +138,12 @@
       return ((h >>> 0) % 1000) / 1000;
     }
     function setTransition(landA, landB, t) {
+      lastLand = landB;
       for (var i = 0; i < N; i++) {
         var a = landA[i], b2 = landB[i];
         var tt = a === b2 ? 0 : cellPhase(i);
         var t2 = t < tt ? a : b2;
-        var col = shade(D.LAND[t2].color, T.dem[i]);
-        var o = i * 3;
-        colors[o] = col.r; colors[o + 1] = col.g; colors[o + 2] = col.b;
+        paintCell(i, t2);
       }
       geo.attributes.color.needsUpdate = true;
     }
@@ -197,15 +207,62 @@
       renderer.render(scene, camera);
     })();
 
+    // ---------- 台风气旋（有台风事件的轮次自动播放一次） ----------
+    var cyclone = null, cycloneRound = -1;
+    function makeCyclone() {
+      var cv = document.createElement('canvas');
+      cv.width = cv.height = 96;
+      var cx = cv.getContext('2d');
+      cx.translate(48, 48);
+      cx.strokeStyle = '#f2ecdd';
+      cx.lineWidth = 5;
+      for (var arm = 0; arm < 3; arm++) {
+        cx.beginPath();
+        for (var a = 0; a <= Math.PI * 0.9; a += 0.1) {
+          var r = 6 + a * 12;
+          var ang = arm * (Math.PI * 2 / 3) + a;
+          var px = r * Math.cos(ang), py = r * Math.sin(ang);
+          if (a === 0) cx.moveTo(px, py); else cx.lineTo(px, py);
+        }
+        cx.stroke();
+      }
+      cx.beginPath(); cx.arc(0, 0, 4, 0, Math.PI * 2); cx.fillStyle = '#f2ecdd'; cx.fill();
+      var tex = new THREE.CanvasTexture(cv);
+      var spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthTest: false }));
+      spr.scale.set(16, 16, 1);
+      scene.add(spr);
+      return spr;
+    }
+    function playCyclone() {
+      if (!cyclone) cyclone = makeCyclone();
+      var t0 = performance.now(), DUR = 2800;
+      var p0 = { x: 30, y: 10 }, p1 = { x: 46, y: 22 }, p2 = { x: 38, y: 25 }; // 海上→湾口→湾内（格坐标）
+      (function frame(now) {
+        var t = Math.min(1, (now - t0) / DUR);
+        var u = 1 - t;
+        var gx = u * u * p0.x + 2 * u * t * p1.x + t * t * p2.x;
+        var gy = u * u * p0.y + 2 * u * t * p1.y + t * t * p2.y;
+        cyclone.position.set(gx - W / 2 + 0.5, 14, gy - H / 2 + 0.5);
+        cyclone.material.rotation += 0.18;
+        cyclone.material.opacity = t < 0.15 ? t / 0.15 : (t > 0.8 ? (1 - t) / 0.2 : 1);
+        if (t < 1) requestAnimationFrame(frame);
+        else cyclone.material.opacity = 0;
+      })(t0);
+    }
+
     return {
       update: function (record) {
         updateLand(record.land);
         rebuildLabels(record.round, record.longan);
+        var hasTyphoon = (record.events || []).some(function (e) { return /taifeng|storm|typhoon/i.test(e.id); });
+        if (hasTyphoon && cycloneRound !== record.round) { cycloneRound = record.round; playCyclone(); }
       },
       playStep: function (recA, recB, t) {
         setTransition(recA.land, recB.land, t);
         rebuildLabels(t > 0.96 ? recB.round : recA.round, t > 0.96 ? recB.longan : recA.longan);
       },
+      setMode: function (m) { mode = m; if (lastLand) updateLand(lastLand); },
+      getMode: function () { return mode; },
       resetView: function () { sph = { r: 95, theta: -0.5, phi: 0.98 }; applyCam(); autoSpin = false; }
     };
   }

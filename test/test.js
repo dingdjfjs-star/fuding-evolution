@@ -52,12 +52,12 @@ section('1. 地形体检');
   // 全部镇址在陆地
   var bad = T.towns.filter(function (t) { return T.elevAt(t.x, t.y) <= 0; });
   eq(bad.length, 0, '全部镇址位于陆地');
-  // 河流汇入水域或别的河（支流汇干流也算连通）
+  // 河流汇入水域或别的河（支流汇干流也算连通；OSM 折线端点为浮点，取整后判定）
   var dry = [];
   T.rivers.forEach(function (r, ri) {
     var p = r.pts[r.pts.length - 1], okr = false;
     for (var dy = -2; dy <= 2 && !okr; dy++) for (var dx = -2; dx <= 2; dx++) {
-      var x = p[0] + dx, yy = p[1] + dy;
+      var x = Math.round(p[0]) + dx, yy = Math.round(p[1]) + dy;
       if (x < 0 || yy < 0 || x >= T.W || yy >= T.H) continue;
       var j = T.idx(x, yy);
       if (T.sea[j]) { okr = true; break; }
@@ -415,6 +415,27 @@ section('8. 称号图鉴');
   ok(a.length >= 1 && b.length >= 1 && c.length >= 1, '每情景至少一枚称号');
   ok(gotOf(D.SCENARIOS[0]).join(',') === a.join(','), '称号判定确定性');
   ok(TL.TITLES.every(t => t.seal.length === 1 && t.name && t.desc), '称号数据完整（单字章/名/判定语）');
+})();
+
+// ============ 9. 滩涂光伏 + 人口校准 ============
+section('9. 滩涂光伏 + 人口校准');
+(function () {
+  const TL9 = require('../js/titles.js');
+  const res = {};
+  D.SCENARIOS.forEach(sc => { res[sc.id] = E.runScenario(sc); });
+  const A = res.A.state.records[6], C = res.C.state.records[6];
+  const solarCells = A.stats[12] || 0;
+  ok(solarCells >= 8, '商贸强港第 6 轮光伏落地（' + solarCells + ' 格）');
+  let bad = 0;
+  for (let i = 0; i < T.N; i++) if (A.land[i] === 12 && T.elevAt(i % T.W, (i / T.W) | 0) > 20) bad++;
+  eq(bad, 0, '光伏全部位于滨海低地（高程≤20m）');
+  eq(C.stats[12] || 0, 0, '生态湾区光伏禁建（0 格）');
+  const ctx = TL9.buildContext(res.A.state, res.A.scores);
+  ok(TL9.computeTitles(ctx).some(t => t.id === 'solar'), 'A 得「追光者」称号');
+  // 人口校准（真实序列：1978≈45万，2010 52.9万，2020 55.3万）
+  const p4 = res.A.state.records[4].pop, p6 = A.pop;
+  ok(Math.abs(p4 / 450000 - 1) < 0.2, '1978 年人口贴近真实序列（' + (p4 / 10000).toFixed(1) + '万）');
+  ok(Math.abs(p6 / 555000 - 1) < 0.2, '2025 年人口贴近真实序列（' + (p6 / 10000).toFixed(1) + '万）');
 })();
 
 // ============ 汇总 ============

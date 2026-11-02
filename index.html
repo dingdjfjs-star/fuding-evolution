@@ -23,6 +23,10 @@
     <button id="btnReset" class="btn">重置</button>
     <button id="btnCompare" class="btn ghost">三情景对比</button>
     <button id="btnTitles" class="btn ghost">称号图鉴</button>
+    <button id="btnChart" class="btn ghost">海图模式</button>
+    <button id="btnDuel" class="btn ghost">竞演结算</button>
+    <button id="btnEvents" class="btn ghost">事件编辑</button>
+    <button id="btnSfx" class="btn tiny">音效:开</button>
   </div>
 </header>
 
@@ -90,6 +94,25 @@
   </div>
 </div>
 
+<!-- 竞演结算弹窗 -->
+<div id="duelModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head"><b>双人竞演 · 结算</b><button id="duelClose" class="btn tiny">关闭 ✕</button></div>
+    <div id="duelBody" class="modal-body"></div>
+  </div>
+</div>
+
+<!-- 事件编辑器弹窗 -->
+<div id="evModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head"><b>事件编辑器</b><button id="evClose" class="btn tiny">关闭 ✕</button></div>
+    <div class="modal-body">
+      <div class="ev-actions"><button id="evApply" class="btn tiny primary">应用</button> <button id="evDownload" class="btn tiny">下载 JSON</button> <span id="evStatus" class="hint"></span></div>
+      <textarea id="evText" class="ev-text" spellcheck="false"></textarea>
+    </div>
+  </div>
+</div>
+
 <script src="vendor/three.min.js"></script>
 <script src="js/boundary.js"></script>
 <script src="js/realdem.js"></script>
@@ -98,6 +121,7 @@
 <script src="js/validate.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/titles.js"></script>
+<script src="js/sfx.js"></script>
 <script src="js/three-view.js"></script>
 <script src="js/ui.js"></script>
 </body>

@@ -17,6 +17,7 @@
     { id: 'port', seal: '港', name: '港城崛起者', desc: '城区 ≥70km² 且滩涂所剩不足八成——城市赢了，海岸退了半步。' },
     { id: 'tea', seal: '茶', name: '白茶圣手', desc: '茶园 ≥80km²——一片叶子撑起了半座城。' },
     { id: 'mangrove', seal: '林', name: '红树林园丁', desc: '红树林湿地 ≥13km²——亲手种回一片海上森林。' },
+    { id: 'solar', seal: '光', name: '追光者', desc: '光伏风电 ≥12km²——在滩涂上架起向海要能的矩阵。' },
     { id: 'tea_trapped', seal: '困', name: '茶困于山', desc: '茶园成片却路网稀疏（<30km）——好茶出不了山。' },
     { id: 'mud_loss', seal: '殇', name: '滩涂之殇', desc: '滩涂损失超过四成——纳潮的肺被填掉了大半。' },
     { id: 'reclaim', seal: '垦', name: '围垦狂潮', desc: '养殖塘 ≥12km²——滩涂被切割成一方方塘埭。' },
@@ -36,6 +37,7 @@
     if (ctx.urbanKm2 >= 70 && ctx.mudRatio <= 0.8) add('port');
     if (ctx.teaKm2 >= 80) add('tea');
     if (ctx.mangroveN >= 20) add('mangrove');
+    if (ctx.solarKm2 >= 12) add('solar');
     if (ctx.teaKm2 >= 30 && ctx.roadKm < 30) add('tea_trapped');
     if (ctx.mudRatio <= 0.6) add('mud_loss');
     if (ctx.pondKm2 >= 12) add('reclaim');
@@ -60,7 +62,7 @@
       scores: scores, pop: rec6.pop, popRatio: scores.popRatio,
       stats: s, stats0: s0,
       urbanKm2: s[8] * T.AREA, teaKm2: s[5] * T.AREA,
-      mudKm2: s[1] * T.AREA, pondKm2: s[11] * T.AREA,
+      mudKm2: s[1] * T.AREA, pondKm2: s[11] * T.AREA, solarKm2: (s[12] || 0) * T.AREA,
       mangroveN: s[3], portN: s[9], roadKm: s[10] * T.CELL,
       mudRatio: rec0.stats[1] ? s[1] / rec0.stats[1] : 1,
       warns: warns, errs: errs, ecoRounds: ecoRounds,

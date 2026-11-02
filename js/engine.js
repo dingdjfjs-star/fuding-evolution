@@ -11,7 +11,7 @@
     T = root.FDTerrain; D = root.FDData; V = root.FDValidate;
   }
   var W = T.W, H = T.H, N = T.N, AREA = T.AREA;
-  var SEA = 0, MUD = 1, WATER = 2, MANGROVE = 3, FOREST = 4, TEA = 5, FARM = 6, VILLAGE = 7, URBAN = 8, PORT = 9, ROAD = 10, POND = 11;
+  var SEA = 0, MUD = 1, WATER = 2, MANGROVE = 3, FOREST = 4, TEA = 5, FARM = 6, VILLAGE = 7, URBAN = 8, PORT = 9, ROAD = 10, POND = 11, SOLAR = 12;
 
   // ---------- 预计算 ----------
   var TEA_TOWN_IDX = { bailin: 1, diantou: 1, panxi: 1, guanyang: 1 }; // 茶乡
@@ -283,6 +283,24 @@
     for (var i = 0; i < N && n < budget; i++) if (land[i] === POND) { land[i] = MUD; n++; }
     return n;
   }
+  // 滩涂光伏：优先占养殖塘，其次滨海低地（dem≤12 且临水）
+  function buildSolar(land, budget) {
+    if (budget <= 0) return 0;
+    var cands = [];
+    for (var i = 0; i < N; i++) {
+      var t = land[i];
+      if (t !== POND && t !== MUD && t !== FOREST && t !== FARM) continue;
+      var x = i % W, y = (i / W) | 0;
+      if (T.dem[i] > 12 || !T.coast[i]) continue;
+      var pri = t === POND ? 3 : (t === MUD ? 2 : 1);
+      cands.push([i, pri + 1 / (1 + T.dem[i])]);
+    }
+    cands.sort(function (a, b) { return b[1] - a[1]; });
+    var n = 0;
+    for (var k = 0; k < cands.length && n < budget; k++) { land[cands[k][0]] = SOLAR; n++; }
+    return n;
+  }
+
   // 港口：深水岸线
   function expandPort(land, budget, anchor) {
     var n = 0;
@@ -466,6 +484,10 @@
     } else if (rd >= 4 && stats[POND] > prevStats[POND]) {
       parts.push('滩涂被围成' + (stats[POND] - prevStats[POND]) + '格养殖塘与田垄，候鸟的食堂一年比一年小。');
     }
+    if (policy.solar && rd >= 5) {
+      if (stats[SOLAR] > prevStats[SOLAR]) parts.push('养殖塘与滨海低地上架起成片光伏矩阵，风机的叶片接住了季风——向海要能。');
+      else parts.push('光伏选址的测量队仍在海边拉尺。');
+    }
     return parts.join('');
   }
 
@@ -570,6 +592,12 @@
       mangroved = growMangrove(land, mod.ecoRestore);
     }
 
+    // 7.5) 滩涂光伏（改革开放后可行；生态保护期禁建）
+    var solarAdded = 0;
+    if (policy.solar && round >= 5 && !policy.eco) {
+      solarAdded = buildSolar(land, round === 5 ? 10 : 12);
+    }
+
     // 8) 村→镇升级 + 城镇扩张
     var urbanBudget = Math.max(0, Math.round(era.urbanBudget * (policy.road ? 1.35 : 0.85)) + mod.urbanAdd);
     var urb = urbanize(land, { roadNear: state.roadNear, policyEco: policy.eco }, UPGRADE_K[round], urbanBudget, round);
@@ -592,6 +620,7 @@
     if (policy.road) popMul *= 1.02;
     if (policy.tea) popMul *= connected ? 1.03 : 1.015;
     if (policy.eco) popMul *= 0.995;
+    if (policy.solar) popMul *= 1.005;
     if (migration < 1) popMul *= migration;
     var newPop = Math.max(500, Math.round(state.pop * popMul));
 
@@ -613,7 +642,7 @@
       round: round, year: era.year, eraLabel: era.label, policy: policy, events: events,
       land: land, table: table, stats: stats, pop: newPop, longan: state.longanAlive,
       narrative: paras, roadInfo: roadInfo, connected: connected,
-      deltas: { teaAdded: teaAdded, farmAdded: farmAdded, reclaimed: reclaimed, mangroved: mangroved, restored: restored, portAdded: portAdded, villGrown: villGrown, urbanGrown: urb.grown, upgraded: urb.upgraded, longanSpawned: longanSpawned },
+      deltas: { teaAdded: teaAdded, farmAdded: farmAdded, reclaimed: reclaimed, mangroved: mangroved, restored: restored, portAdded: portAdded, villGrown: villGrown, urbanGrown: urb.grown, upgraded: urb.upgraded, longanSpawned: longanSpawned, solarAdded: solarAdded },
       issues: []
     };
     state.land = land; state.round = round; state.year = era.year; state.pop = newPop;
@@ -638,9 +667,9 @@
     var s = state.records[state.records.length - 1].stats;
     var mud0 = state.records[0].stats[MUD];
     var ecoRounds = state.records.filter(function (r) { return r.policy && r.policy.eco; }).length;
-    var urbanKm2 = s[URBAN] * AREA, teaKm2 = s[TEA] * AREA, roadKm = s[ROAD] * 0.5;
-    var econ = clamp100(Math.round((urbanKm2 * 1.0 + s[PORT] * 2.6 + roadKm * 0.35 + teaKm2 * 0.25 + state.pop / 12000) / 2.4));
-    var eco = clamp100(Math.round(s[MUD] / Math.max(1, mud0) * 38 + s[MANGROVE] * 0.9 + ecoRounds * 5 - s[POND] * 0.22));
+    var urbanKm2 = s[URBAN] * AREA, teaKm2 = s[TEA] * AREA, roadKm = s[ROAD] * 0.5, solarKm2 = s[SOLAR] * AREA;
+    var econ = clamp100(Math.round((urbanKm2 * 1.0 + s[PORT] * 2.6 + roadKm * 0.35 + teaKm2 * 0.25 + solarKm2 * 1.6 + state.pop / 12000) / 2.4));
+    var eco = clamp100(Math.round(s[MUD] / Math.max(1, mud0) * 38 + s[MANGROVE] * 0.9 + ecoRounds * 5 - s[POND] * 0.22 - s[SOLAR] * 0.3));
     var cap = D.capacityOf(s);
     var ratio = state.pop / Math.max(1, cap);
     var liv = clamp100(Math.round(52 + (ratio <= 1 ? 24 : Math.max(0, 24 - (ratio - 1) * 90)) + teaKm2 * 0.45 + s[VILLAGE] * 0.12));

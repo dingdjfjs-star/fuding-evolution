@@ -7,7 +7,7 @@ const SRC = 'E:/zcode/玩/福鼎城镇演化';
 const STAGE = 'E:/zcode/玩/_staging/福鼎城镇演化';
 const OUT = 'E:/zcode/玩/福鼎城镇演化-分享包.zip';
 const FILES = ['index.html', 'style.css', 'README.md', 'server.js', '启动.bat'];
-const JS = ['boundary.js', 'data.js', 'engine.js', 'realdem.js', 'terrain.js', 'three-view.js', 'ui.js', 'validate.js'];
+const JS = ['boundary.js', 'data.js', 'engine.js', 'realdem.js', 'terrain.js', 'three-view.js', 'titles.js', 'ui.js', 'validate.js'];
 
 // 清场
 fs.rmSync('E:/zcode/玩/_staging', { recursive: true, force: true });
